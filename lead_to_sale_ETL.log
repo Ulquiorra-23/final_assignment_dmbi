@@ -1,0 +1,18 @@
+2025-02-22 17:47:58,375 - INFO - ETL - ETL process started.
+2025-02-22 17:47:58,375 - INFO - ETL - Starting data extraction...
+2025-02-22 17:47:58,375 - INFO - ETL - Data extraction completed successfully.
+2025-02-22 17:47:58,375 - ERROR - ETL - Error during extraction: name 'data' is not defined
+Traceback (most recent call last):
+  File "c:\Users\massi\OneDrive\Desktop\Uni\DMFBI-R\7.final ass\final_assignment_dmbi\lead_to_sale_ETL.py", line 25, in extract_data
+    return data
+           ^^^^
+NameError: name 'data' is not defined
+2025-02-22 17:48:15,157 - INFO - ETL - ETL process started.
+2025-02-22 17:48:15,158 - INFO - ETL - Starting data extraction...
+2025-02-22 17:48:15,158 - INFO - ETL - Data extraction completed successfully.
+2025-02-22 17:48:15,159 - ERROR - ETL - Error during extraction: name 'data' is not defined
+Traceback (most recent call last):
+  File "c:\Users\massi\OneDrive\Desktop\Uni\DMFBI-R\7.final ass\final_assignment_dmbi\lead_to_sale_ETL.py", line 25, in extract_data
+    return data
+           ^^^^
+NameError: name 'data' is not defined
