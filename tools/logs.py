@@ -26,11 +26,11 @@ def log_wrap(func):
     using the logger_writer function with dynamic function name.
     '''
     def wrapper(*args, **kwargs):
-        # Get the caller function's name
-        caller_name = func.__name__
-        logger = logger_writer(caller_name)  # Get the logger for this function name
-        logger.info(f'Executing function: {caller_name}')
-        result = func(*args, **kwargs)
-        logger.info(f'Completed function: {caller_name}')
+        caller_name = func.__name__ # Get the caller function's name
+        logger = logger_writer(caller_name) # Get the logger for this function name
+        logger.info(f'Executing function: {caller_name}') # Log before the function execution
+        result = func(*args, **kwargs, logger=logger) # Execute the function passing the logger
+        logger.info(f'Completed function: {caller_name}') # Log after the function execution
+        
         return result
     return wrapper

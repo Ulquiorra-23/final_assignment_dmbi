@@ -9,12 +9,9 @@ import pandas as pd
 from tools.sql_tools import write_to_database
 from tools.logs import log_wrap, logger_writer
 
-#define generic logger
-logger = logger_writer()
-
 
 @log_wrap
-def extract_data():
+def extract_data(logger):
     try:
         logger.info('Starting data extraction...')
         # Extraction logic
@@ -25,8 +22,7 @@ def extract_data():
         raise  # Re-raise the exception
 
 @log_wrap
-def transform_data(data):
-    logger = logger_writer()
+def transform_data(data,logger):
     try:
         logger.info('Starting data transformation...')
         # Transformation logic
@@ -37,8 +33,7 @@ def transform_data(data):
         raise
 
 @log_wrap
-def load_data(transformed_data):
-    logger = logger_writer()
+def load_data(transformed_data,logger):
     try:
         logger.info('Starting data load...')
         # Load logic (write to SQL)
@@ -48,8 +43,7 @@ def load_data(transformed_data):
         raise
 
 @log_wrap
-def main():
-    logger = logger_writer()
+def main(logger):
     logger.info('ETL process started.')
     data = extract_data()
     transformed_data = transform_data(data)
