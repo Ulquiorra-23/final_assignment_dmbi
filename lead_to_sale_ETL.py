@@ -7,7 +7,7 @@ import pandas as pd
 
 # Importing custom libraries
 from tools.sql_tools import write_to_database
-from tools.logs import log_wrap, logger_writer
+from tools.logs import log_wrap
 
 
 @log_wrap
