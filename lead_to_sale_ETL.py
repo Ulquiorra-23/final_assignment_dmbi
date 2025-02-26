@@ -10,6 +10,7 @@ from tools.sql_tools import write_to_database
 from tools.logs import log_wrap
 
 
+# @Juanjo
 @log_wrap
 def extract_data(logger):
     try:
@@ -21,6 +22,7 @@ def extract_data(logger):
         logger.error(f'Error during extraction: {e}', exc_info=True)
         raise  # Re-raise the exception
 
+# @Max
 @log_wrap
 def transform_data(data,logger):
     try:
@@ -32,6 +34,7 @@ def transform_data(data,logger):
         logger.error(f'Transformation error: {e}', exc_info=True)
         raise
 
+# @Jakob
 @log_wrap
 def load_data(transformed_data,logger):
     try:
