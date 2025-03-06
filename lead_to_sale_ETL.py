@@ -108,7 +108,7 @@ def transform_data(data: list, logger) -> list:
         logger.error(f'Transformation error: {e}', exc_info=True)
         raise
 
-# @Jakob
+# @Jakob Code
 @log_wrap
 def load_data(transformed_data,logger):
     try:
