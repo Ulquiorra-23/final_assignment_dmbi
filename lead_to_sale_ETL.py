@@ -100,7 +100,7 @@ def transform_data(data: list, logger) -> list:
         sales_fact_df = sales_fact_df[FINAL_COLS_SALES]        
         
         logger.info(f'Packing data for loading...')
-        list_of_transformed_dfs = [sales_fact_df,zipcode_dim_df,weather_dim_df]
+        list_of_transformed_dfs = [zipcode_dim_df,weather_dim_df, sales_fact_df]
         
         return list_of_transformed_dfs
     
