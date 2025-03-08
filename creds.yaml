@@ -1,0 +1,5 @@
+mysql-db:
+  database: dmbi_final
+  host: localhost
+  password: javme9-kavdev-duxwEs
+  username: root
