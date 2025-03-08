@@ -1,0 +1,2 @@
+ALTER TABLE sales_fact
+MODIFY COLUMN zipcode_id INT

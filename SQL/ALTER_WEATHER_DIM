@@ -1,0 +1,3 @@
+ALTER TABLE weather_dim
+MODIFY COLUMN weather_id INT AUTO_INCREMENT PRIMARY KEY,
+ADD CONSTRAINT fk_constraint_zipcode_id FOREIGN KEY (zipcode_id) REFERENCES zipcode_dim(zipcode_id)

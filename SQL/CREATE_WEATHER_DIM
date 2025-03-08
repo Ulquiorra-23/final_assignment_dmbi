@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS weather_dim (
+  weather_id int NOT NULL,
+  zipcode_id int NOT NULL,
+  year int NOT NULL,
+  avg_temperature float NOT NULL,
+  avg_relative_humidity float NOT NULL,
+  avg_precipitation_rate float NOT NULL,
+  avg_wind_speed float NOT NULL
+);

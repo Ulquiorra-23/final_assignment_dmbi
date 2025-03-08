@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS zipcode_dim (
+  zipcode_id int NOT NULL,
+  zipcode varchar(50) NOT NULL,
+  zc_latitude float,
+  zc_longitude float,
+  autonomous_community varchar(50),
+  autonomous_community_nk varchar(50),
+  province varchar(50)
+);

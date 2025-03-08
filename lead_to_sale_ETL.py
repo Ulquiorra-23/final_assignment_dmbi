@@ -8,8 +8,49 @@ import pandas as pd
 # Importing custom libraries
 from tools.sql_tools import write_to_database
 from tools.logs import log_wrap
+import mysql.connector
+from sqlalchemy import create_engine
+
+# Insert Juanjo's functions
+from tools.cleaning import dataFrameCreate, dropDupli, delete_unreachable_leads, delete_outliers
+
 
 # Paths
+DATA_DIR = os.path.join(os.getcwd(),'data')
+FILENAME_sales_phases_funnel_df = os.path.join(DATA_DIR, r'sale_phases_funnel.csv')
+FILENAME_zipcode_df = os.path.join(DATA_DIR, r'zipcode_eae.csv')
+FILENAME_meteo_df = os.path.join(DATA_DIR, r'meteo_eae.csv')
+FILENAME_creds = os.path.join(r'creds.yaml')
+
+# Importing SQL Queries
+SQL_DIR = os.path.join(os.getcwd(),'SQL')
+FILENAME_CREATE_ZIPCODE_DIM = os.path.join(SQL_DIR, r'CREATE_ZIPCODE_DIM')
+with open(FILENAME_CREATE_ZIPCODE_DIM, 'r') as CREATE_ZIPCODE_DIM_FILE:
+    CREATE_ZIPCODE_DIM = CREATE_ZIPCODE_DIM_FILE.read()
+
+FILENAME_CREATE_WEATHER_DIM = os.path.join(SQL_DIR, r'CREATE_WEATHER_DIM')
+with open(FILENAME_CREATE_WEATHER_DIM, 'r') as CREATE_WEATHER_DIM_FILE:
+    CREATE_WEATHER_DIM = CREATE_WEATHER_DIM_FILE.read()
+
+FILENAME_CREATE_SALES_FACT = os.path.join(SQL_DIR, r'CREATE_SALES_FACT')
+with open(FILENAME_CREATE_SALES_FACT, 'r') as CREATE_SALES_FACT_FILE:
+    CREATE_SALES_FACT = CREATE_SALES_FACT_FILE.read()
+
+FILENAME_ALTER_ZIPCODE_DIM = os.path.join(SQL_DIR, r'ALTER_ZIPCODE_DIM')
+with open(FILENAME_ALTER_ZIPCODE_DIM, 'r') as ALTER_ZIPCODE_DIM_FILE:
+    ALTER_ZIPCODE_DIM = ALTER_ZIPCODE_DIM_FILE.read()
+
+FILENAME_ALTER_WEATHER_DIM = os.path.join(SQL_DIR, r'ALTER_WEATHER_DIM')
+with open(FILENAME_ALTER_WEATHER_DIM, 'r') as ALTER_WEATHER_DIM_FILE:
+    ALTER_WEATHER_DIM = ALTER_WEATHER_DIM_FILE.read()
+
+FILENAME_ALTER_SALES_FACT_1 = os.path.join(SQL_DIR, r'ALTER_SALES_FACT_1')
+with open(FILENAME_ALTER_SALES_FACT_1, 'r') as ALTER_SALES_FACT_FILE_1:
+    ALTER_SALES_FACT_1 = ALTER_SALES_FACT_FILE_1.read()
+
+FILENAME_ALTER_SALES_FACT_2 = os.path.join(SQL_DIR, r'ALTER_SALES_FACT_2')
+with open(FILENAME_ALTER_SALES_FACT_2, 'r') as ALTER_SALES_FACT_FILE_2:
+    ALTER_SALES_FACT_2 = ALTER_SALES_FACT_FILE_2.read()
 
 # Names
 
@@ -33,7 +74,10 @@ FINAL_COLS_WEATHER=['weather_id','zipcode_id','year','avg_temperature','avg_rela
 def extract_data(logger):
     try:
         logger.info('Starting data extraction...')
-        # Extraction logic
+        data = dataFrameCreate()
+        data = dropDupli(data)        
+        data = delete_unreachable_leads(data)
+        data = delete_outliers(data)
         logger.info('Data extraction completed successfully.')
         return data
     except Exception as e:
@@ -68,16 +112,18 @@ def transform_data(data: list, logger) -> list:
         zipcode_dim_df_raw.insert(0,'zipcode_id',range(1, len(zipcode_dim_df_raw) + 1))
         zipcode_dim_df_raw['zipcode_id'] = zipcode_dim_df_raw['zipcode_id'].astype('int32')
         zipcode_dim_df = zipcode_dim_df_raw
-        
+
+
         logger.info(f'Grouping weather_dim_df_raw...')
         weather_dim_df_raw['date'] = weather_dim_df_raw['date'].dt.year
         weather_dim_df_raw = weather_dim_df_raw.groupby(['date','zipcode']).mean().reset_index()
         
         logger.info(f'Adding FK zipcode_id in weather table...')
-        weather_dim_df = pd.merge(weather_dim_df,zipcode_dim_df_raw,on= 'zipcode', how='left')
+        weather_dim_df = pd.merge(weather_dim_df_raw,zipcode_dim_df_raw,on= 'zipcode', how='left')
         
         logger.info(f'Dropping null zipcode_id from weather table...')
-        weather_dim_df = weather_dim_df_raw.dropna()
+        weather_dim_df = weather_dim_df.dropna()
+        weather_dim_df['zipcode_id'] = weather_dim_df['zipcode_id'].astype('int32')
         
         logger.info(f'Creating a PK in weather_dim_df_raw...')
         weather_dim_df.insert(0,'weather_id',range(1, len(weather_dim_df) + 1))
@@ -101,23 +147,103 @@ def transform_data(data: list, logger) -> list:
         
         logger.info(f'Packing data for loading...')
         list_of_transformed_dfs = [zipcode_dim_df,weather_dim_df, sales_fact_df]
-        
+
         return list_of_transformed_dfs
     
     except Exception as e:
         logger.error(f'Transformation error: {e}', exc_info=True)
         raise
 
+
 # @Jakob Code
 @log_wrap
-def load_data(transformed_data,logger):
+def load_data(transformed_data, logger):
+    with open(FILENAME_creds, "r") as file:
+        creds = yaml.safe_load(file)
+
     try:
-        logger.info('Starting data load...')
-        # Load logic (write to SQL)
-        logger.info('Data load completed successfully.')
+        def create_table():
+            connection = mysql.connector.connect(
+                user = creds['mysql-db']['username'],
+                password = creds['mysql-db']['password'],
+                host = creds['mysql-db']['host'],
+                database = creds['mysql-db']['database'],
+            )
+            cursor = connection.cursor()
+            
+            cursor.execute(CREATE_ZIPCODE_DIM)
+            cursor.execute(CREATE_WEATHER_DIM)
+            cursor.execute(CREATE_SALES_FACT)
+            connection.commit()
+            logger.info("Table structures created successfully.")
+            
+            cursor.close()
+            connection.close()
+
+
+        dfs_dict = {
+                "zipcode_dim": transformed_data[0],
+                "weather_dim": transformed_data[1],
+                "sales_fact": transformed_data[2]
+            }
+
+        
+        def write_to_database(dfs_dict, if_exists='replace'):
+            """
+            Write a dataframe into a MySql table.
+
+            Args:
+                dfs_dict: The list of tables to load to along with the dfs to insert
+                if_exists (str): Default 'append'
+            """
+
+            _db_user = creds['mysql-db']['username']
+            _db_password = creds['mysql-db']['password']
+            _db_host = creds['mysql-db']['host']
+            _db_name = creds['mysql-db']['database']
+            
+            engine = create_engine(f"mysql+pymysql://{_db_user}:{_db_password}@{_db_host}:3306/{_db_name}")
+            with engine.connect() as connection:
+                for table_name, df in dfs_dict.items():
+                    if isinstance(df, pd.DataFrame): 
+                        df.to_sql(table_name, con=connection, if_exists=if_exists, index=False)
+                        logger.info(f"Data successfully inserted into {table_name}")
+                    else:
+                        logger.info(f"Skipping {table_name}: Not a valid DataFrame")
+            
+            # return logger.info("Completed uploading all data..")
+
+
+        
+        def create_relationships():
+            # Establish database connection
+            connection = mysql.connector.connect(
+                user = creds['mysql-db']['username'],
+                password = creds['mysql-db']['password'],
+                host = creds['mysql-db']['host'],
+                database = creds['mysql-db']['database'],
+            )
+
+            cursor = connection.cursor()
+            
+            cursor.execute(ALTER_ZIPCODE_DIM)
+            cursor.execute(ALTER_WEATHER_DIM)
+            cursor.execute(ALTER_SALES_FACT_1)
+            cursor.execute(ALTER_SALES_FACT_2)
+
+            connection.commit()
+            logger.info("ALTER TABLE query executed successfully.")
+
+
+        create_table()
+        write_to_database(dfs_dict)
+        create_relationships()
+        
     except Exception as e:
         logger.error(f'Load error: {e}', exc_info=True)
         raise
+
+
 
 @log_wrap
 def main(logger):
@@ -126,7 +252,6 @@ def main(logger):
     transformed_data = transform_data(data)
     load_data(transformed_data)
     logger.info('ETL process completed successfully.')
-
 if __name__ == '__main__':
     main()
 
