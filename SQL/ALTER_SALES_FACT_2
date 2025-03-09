@@ -1,3 +1,6 @@
 ALTER TABLE sales_fact
 MODIFY COLUMN sales_id INT AUTO_INCREMENT PRIMARY KEY,
-ADD CONSTRAINT fk_constraint_zipcode_id_ FOREIGN KEY (zipcode_id) REFERENCES zipcode_dim(zipcode_id)
+ADD CONSTRAINT fk_constraint_zipcode_id_ FOREIGN KEY (zipcode_id) REFERENCES zipcode_dim(zipcode_id),
+ADD INDEX idx_zipcode_id (zipcode_id),
+ADD INDEX idx_lead_id (lead_id(15)),
+ADD INDEX idx_most_recent_contract_signature (most_recent_contract_signature);

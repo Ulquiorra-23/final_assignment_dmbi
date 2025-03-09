@@ -1,2 +1,4 @@
 ALTER TABLE zipcode_dim
-MODIFY COLUMN zipcode_id INT AUTO_INCREMENT PRIMARY KEY
+MODIFY COLUMN zipcode_id INT AUTO_INCREMENT PRIMARY KEY,
+ADD INDEX idx_zipcode (zipcode(10)),
+ADD INDEX idx_province (province(50));
